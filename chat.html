@@ -1,0 +1,67 @@
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+<script type="text/javascript">
+	var my_username = '';
+	var socket = io.connect('http://localhost:3000');	
+	
+	function send_individual_msg(id){		  
+		socket.emit('check_user', my_username, id);	
+	} 
+	
+	socket.on('connect', function(){
+		socket.emit('adduser', prompt("What's your name?"));
+	}); 
+	
+	socket.on('msg_user_handle', function (username, data) {
+		$('#conversation').append('<b>'+username + ':</b> ' + data + '<br>');			
+	});	
+	
+	socket.on('msg_user_found', function (username) {		
+		socket.emit('msg_user', username, my_username, prompt("Type your message:"));
+	}); 
+	
+	socket.on('updatechat', function (username, data) {
+		$('#conversation').append('<b>'+username + ':</b> ' + data + '<br>');
+	});	
+	
+	socket.on('store_username', function (username) {
+		my_username = username;
+	});	 
+	
+	socket.on('updateusers', function(data) {		
+		$('#users').empty();
+		$.each(data, function(key, value) {
+			$('#users').append('<div style="cursor:pointer;" onclick="send_individual_msg(\''+value+'\')">' + key + '</div>');
+		});
+	});
+ 
+	
+	$(function(){
+		
+		$('#datasend').click( function() {
+			var message = $('#data').val();
+			if(message == '' || jQuery.trim(message).length == 0)
+			return false;
+			$('#data').val('');		
+			socket.emit('sendchat', message);
+		});
+ 
+		
+		$('#data').keypress(function(e) {
+			if(e.which == 13) {
+				$(this).blur();
+				$('#datasend').click();
+			}
+		});
+	});
+ 
+</script>
+<div style="float:left;width:100px;border-right:1px solid black;height:300px;padding:10px;overflow:scroll-y;">
+	<b>ONLINE USERS</b>
+	<div id="users"></div>
+</div>
+<div style="float:left;width:550px;height:250px;overflow:scroll-y;padding:10px;">
+	<div id="conversation"></div>
+	<input id="data" style="width:200px;" />
+	<input type="button" id="datasend" value="send" />
+</div>
